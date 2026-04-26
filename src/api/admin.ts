@@ -5,6 +5,8 @@ import type { BackendCalendarItem } from "./user";
 export interface BackendNsfwApplication {
   id: number;
   userId: number;
+  username?: string;
+  avatar?: string;
   reason: string;
   status: string;
   createdAt: string;

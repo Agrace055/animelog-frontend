@@ -70,7 +70,7 @@ export default function AdminProfile() {
   return (
     <div className="max-w-2xl mx-auto animate-in fade-in duration-300">
       <button
-        onClick={() => navigate("/console-admin")}
+        onClick={() => navigate("/")}
         className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors mb-6"
       >
         <ArrowLeft className="w-4 h-4" />

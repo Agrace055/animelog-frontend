@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import type React from "react";
 import { MessageCircle, CheckCircle2, XCircle, Clock } from "lucide-react";
 import clsx from "clsx";
 import { adminApi } from "../api/admin";

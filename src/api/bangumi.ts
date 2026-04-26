@@ -59,6 +59,13 @@ export const bangumiApi = {
   createArchiveSyncTask: () =>
     api.post<BangumiTask>("/admin/bangumi/tasks/archive-sync"),
 
+  // 上传存档压缩包并创建解析任务
+  uploadArchive: (file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    return api.postForm<BangumiTask>("/admin/bangumi/archive/upload", formData);
+  },
+
   // 创建业务导入任务
   createImportTask: (bangumiIds: number[]) =>
     api.post<BangumiTask>("/admin/bangumi/tasks/import", { bangumiIds }),

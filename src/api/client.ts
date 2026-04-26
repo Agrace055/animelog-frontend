@@ -45,6 +45,29 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   return json.data as T;
 }
 
+async function requestForm<T>(path: string, formData: FormData): Promise<T> {
+  const token = localStorage.getItem("token");
+  const headers: Record<string, string> = {};
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+
+  const res = await fetch(`/api/v1${path}`, {
+    method: "POST",
+    headers,
+    body: formData,
+  });
+  const json = await res.json();
+
+  if (res.status === 401 || json.code === 401) {
+    clearSessionAndRedirect();
+    throw new ApiError(401, json.msg ?? "登录已失效，请重新登录");
+  }
+
+  if (json.code !== 200) {
+    throw new ApiError(json.code ?? res.status, json.msg ?? "请求失败");
+  }
+  return json.data as T;
+}
+
 type Params = Record<string, string | number | boolean | undefined | null>;
 
 function buildQuery(params?: Params): string {
@@ -66,6 +89,9 @@ export const api = {
       method: "POST",
       body: body != null ? JSON.stringify(body) : undefined,
     }),
+
+  postForm: <T>(path: string, formData: FormData) =>
+    requestForm<T>(path, formData),
 
   put: <T>(path: string, body?: unknown) =>
     request<T>(path, {

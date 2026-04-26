@@ -4,6 +4,7 @@ import { useNavigate, Link } from "react-router";
 import { useStore } from "../store/atoms";
 import { authApi } from "../api/auth";
 import { ApiError } from "../api/client";
+import { isAdminHost } from "../utils/host";
 
 type LoginTab = "password" | "code";
 
@@ -11,6 +12,7 @@ export default function Login() {
   const loginAsync = useStore((state) => state.loginAsync);
   const loginWithCodeAsync = useStore((state) => state.loginWithCodeAsync);
   const navigate = useNavigate();
+  const adminHost = isAdminHost();
 
   const [tab, setTab] = useState<LoginTab>("password");
 
@@ -303,15 +305,17 @@ export default function Login() {
             </>
           )}
 
-          <div className="mt-6 text-sm text-slate-500">
-            还没有账号？{" "}
-            <Link
-              to="/register"
-              className="text-rose-500 font-semibold hover:underline"
-            >
-              立即注册
-            </Link>
-          </div>
+          {!adminHost && (
+            <div className="mt-6 text-sm text-slate-500">
+              还没有账号？{" "}
+              <Link
+                to="/register"
+                className="text-rose-500 font-semibold hover:underline"
+              >
+                立即注册
+              </Link>
+            </div>
+          )}
         </div>
       </div>
 

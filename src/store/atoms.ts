@@ -4,6 +4,7 @@ import { authApi } from "../api/auth";
 import { mediaApi } from "../api/media";
 import { userApi } from "../api/user";
 import { ApiError } from "../api/client";
+import { defaultAvatarImage } from "../assets/defaultImages";
 
 // ── 本地用户从 localStorage 恢复 ──────────────────────────────────────────────
 function loadStoredUser(): User | null {
@@ -30,7 +31,7 @@ function mapBackendUser(u: Record<string, any>): User {
     id: String(u.id),
     username: u.username ?? "",
     name: u.nickname ?? u.username ?? "",
-    avatar: u.avatarUrl || `https://picsum.photos/seed/${u.username}/100/100`,
+    avatar: u.avatarUrl || defaultAvatarImage,
     role: u.role === "admin" ? "admin" : "user",
     email: u.email,
     phone: u.phone,

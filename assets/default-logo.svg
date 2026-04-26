@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="AnimeLog">
+  <defs>
+    <linearGradient id="logo-gradient" x1="18" y1="14" x2="110" y2="114" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#f43f5e"/>
+      <stop offset="0.52" stop-color="#6366f1"/>
+      <stop offset="1" stop-color="#14b8a6"/>
+    </linearGradient>
+  </defs>
+  <rect width="128" height="128" rx="28" fill="#0f172a"/>
+  <path d="M64 19 102 106H84.5l-7.4-18.2H50.4L43 106H26L64 19Zm7.4 54.4L63.9 54 56 73.4h15.4Z" fill="url(#logo-gradient)"/>
+  <path d="M40 111h48" stroke="#f8fafc" stroke-width="8" stroke-linecap="round" opacity=".88"/>
+</svg>

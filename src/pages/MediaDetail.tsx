@@ -17,6 +17,7 @@ import MediaCard from "../components/common/MediaCard";
 import MediaTags from "../components/ui/MediaTags";
 import { useStore, MediaRecord } from "../store/atoms";
 import { MediaType } from "../types";
+import { defaultAvatarImage } from "../assets/defaultImages";
 
 export default function MediaDetail({ type }: { type: MediaType }) {
   const { id } = useParams<{ id: string }>();
@@ -352,7 +353,7 @@ export default function MediaDetail({ type }: { type: MediaType }) {
                         className="flex items-center gap-3 p-3 bg-white border border-slate-100 rounded-xl shadow-sm hover:shadow-md hover:border-indigo-200 transition cursor-pointer group"
                       >
                         <img
-                          src={char.avatarUrl}
+                          src={char.avatarUrl ?? defaultAvatarImage}
                           alt={char.name}
                           className="w-12 h-12 rounded-full object-cover bg-slate-200 shrink-0 group-hover:ring-2 group-hover:ring-indigo-100 transition-all"
                           referrerPolicy="no-referrer"
@@ -388,7 +389,7 @@ export default function MediaDetail({ type }: { type: MediaType }) {
                         className="flex items-center gap-3 p-3 bg-white border border-slate-100 rounded-xl shadow-sm hover:shadow-md hover:border-indigo-200 transition cursor-pointer group"
                       >
                         <img
-                          src={p.avatarUrl}
+                          src={p.avatarUrl ?? defaultAvatarImage}
                           alt={p.name}
                           className="w-12 h-12 rounded-full object-cover bg-slate-200 shrink-0 group-hover:ring-2 group-hover:ring-indigo-100 transition-all"
                           referrerPolicy="no-referrer"
@@ -461,7 +462,7 @@ export default function MediaDetail({ type }: { type: MediaType }) {
                         className="flex gap-4 border-b border-slate-100 pb-4 last:border-0 last:pb-0"
                       >
                         <img
-                          src={`https://picsum.photos/seed/${review.userId}/40/40`}
+                          src={defaultAvatarImage}
                           className="w-10 h-10 rounded-full bg-slate-200 shrink-0"
                           alt="avatar"
                         />

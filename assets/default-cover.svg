@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 600" role="img" aria-label="Default cover">
+  <defs>
+    <linearGradient id="cover-bg" x1="52" y1="40" x2="348" y2="560" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#f43f5e"/>
+      <stop offset="0.48" stop-color="#6366f1"/>
+      <stop offset="1" stop-color="#14b8a6"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="600" rx="36" fill="#0f172a"/>
+  <rect x="24" y="24" width="352" height="552" rx="28" fill="url(#cover-bg)" opacity=".9"/>
+  <path d="M98 382h204" stroke="#f8fafc" stroke-width="18" stroke-linecap="round" opacity=".82"/>
+  <path d="M126 426h148" stroke="#f8fafc" stroke-width="12" stroke-linecap="round" opacity=".58"/>
+  <path d="M200 130 278 318h-37l-15-39h-54l-15 39h-35l78-188Zm15 119-15.5-43.2L183 249h32Z" fill="#fff" opacity=".9"/>
+</svg>

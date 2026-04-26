@@ -22,8 +22,10 @@ import AdminImport from "./pages/AdminImport";
 import AdminFeedback from "./pages/AdminFeedback";
 import AdminProfile from "./pages/AdminProfile";
 import { useStore } from "./store/atoms";
+import { isAdminHost } from "./utils/host";
 
 function AppBootstrap() {
+  const adminHost = isAdminHost();
   const user = useStore((state) => state.user);
   const world = useStore((state) => state.world);
   const darkMode = useStore((state) => state.darkMode);
@@ -38,15 +40,19 @@ function AppBootstrap() {
   }, [darkMode]);
 
   useEffect(() => {
+    if (adminHost) {
+      return;
+    }
+
     void Promise.all([
       loadMedia("anime", { includeNsfw: world === "hidden" }),
       loadMedia("novel", { includeNsfw: world === "hidden" }),
       loadMedia("game", { includeNsfw: world === "hidden" }),
     ]);
-  }, [loadMedia, world]);
+  }, [adminHost, loadMedia, world]);
 
   useEffect(() => {
-    if (!user) {
+    if (adminHost || !user) {
       return;
     }
 
@@ -56,7 +62,14 @@ function AppBootstrap() {
       loadNotifications(),
       loadCalendar(),
     ]);
-  }, [loadCalendar, loadFavorites, loadNotifications, loadRecords, user]);
+  }, [
+    adminHost,
+    loadCalendar,
+    loadFavorites,
+    loadNotifications,
+    loadRecords,
+    user,
+  ]);
 
   return null;
 }
@@ -71,54 +84,70 @@ function ProtectedRoute({ adminOnly = false }: { adminOnly?: boolean }) {
   }
 
   if (adminOnly && user.role !== "admin") {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/login" replace />;
   }
 
   return <Outlet />;
 }
 
 export default function App() {
+  const adminHost = isAdminHost();
+
   return (
     <BrowserRouter>
       <AppBootstrap />
       <Routes>
-        {/* Public Routes */}
         <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-
-        {/* Protected User Routes */}
-        <Route element={<ProtectedRoute />}>
-          <Route element={<Layout />}>
-            <Route path="/" element={<Home />} />
-            <Route path="/anime" element={<MediaList type="anime" />} />
-            <Route path="/novel" element={<MediaList type="novel" />} />
-            <Route path="/game" element={<MediaList type="game" />} />
-            <Route path="/anime/:id" element={<MediaDetail type="anime" />} />
-            <Route path="/novel/:id" element={<MediaDetail type="novel" />} />
-            <Route path="/game/:id" element={<MediaDetail type="game" />} />
-            <Route path="/person/:id" element={<PersonDetail />} />
-            <Route path="/search" element={<Search />} />
-            <Route path="/calendar" element={<Calendar />} />
-            <Route path="/my" element={<Dashboard />} />
-            <Route path="/my/records" element={<MyRecords />} />
-            <Route path="/my/progress" element={<MyRecords />} />
-            <Route path="/settings" element={<Settings />} />
-            <Route path="/notifications" element={<Notifications />} />
-          </Route>
-        </Route>
-
-        {/* Admin Routes */}
-        <Route element={<ProtectedRoute adminOnly />}>
-          <Route element={<AdminLayout />}>
-            <Route path="/console-admin" element={<AdminConsole />} />
-            <Route path="/console-admin/media" element={<AdminMedia />} />
-            <Route path="/console-admin/reviews" element={<AdminReviews />} />
-            <Route path="/console-admin/calendar" element={<AdminCalendar />} />
-            <Route path="/console-admin/feedback" element={<AdminFeedback />} />
-            <Route path="/console-admin/import" element={<AdminImport />} />
-            <Route path="/console-admin/profile" element={<AdminProfile />} />
-          </Route>
-        </Route>
+        {adminHost ? (
+          <>
+            <Route
+              path="/register"
+              element={<Navigate to="/login" replace />}
+            />
+            <Route element={<ProtectedRoute adminOnly />}>
+              <Route element={<AdminLayout />}>
+                <Route path="/" element={<AdminConsole />} />
+                <Route path="/media" element={<AdminMedia />} />
+                <Route path="/reviews" element={<AdminReviews />} />
+                <Route path="/calendar" element={<AdminCalendar />} />
+                <Route path="/feedback" element={<AdminFeedback />} />
+                <Route path="/import" element={<AdminImport />} />
+                <Route path="/profile" element={<AdminProfile />} />
+              </Route>
+            </Route>
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </>
+        ) : (
+          <>
+            <Route path="/register" element={<Register />} />
+            <Route element={<ProtectedRoute />}>
+              <Route element={<Layout />}>
+                <Route path="/" element={<Home />} />
+                <Route path="/anime" element={<MediaList type="anime" />} />
+                <Route path="/novel" element={<MediaList type="novel" />} />
+                <Route path="/game" element={<MediaList type="game" />} />
+                <Route
+                  path="/anime/:id"
+                  element={<MediaDetail type="anime" />}
+                />
+                <Route
+                  path="/novel/:id"
+                  element={<MediaDetail type="novel" />}
+                />
+                <Route path="/game/:id" element={<MediaDetail type="game" />} />
+                <Route path="/person/:id" element={<PersonDetail />} />
+                <Route path="/search" element={<Search />} />
+                <Route path="/calendar" element={<Calendar />} />
+                <Route path="/my" element={<Dashboard />} />
+                <Route path="/my/records" element={<MyRecords />} />
+                <Route path="/my/progress" element={<MyRecords />} />
+                <Route path="/settings" element={<Settings />} />
+                <Route path="/notifications" element={<Notifications />} />
+              </Route>
+            </Route>
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </>
+        )}
       </Routes>
     </BrowserRouter>
   );

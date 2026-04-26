@@ -4,6 +4,7 @@ import { ShieldAlert, CheckCircle, XCircle } from "lucide-react";
 import { adminApi } from "../api/admin";
 import type { BackendNsfwApplication } from "../api/admin";
 import { ApiError } from "../api/client";
+import { defaultAvatarImage } from "../assets/defaultImages";
 
 export default function AdminConsole() {
   const user = useStore((state) => state.user);
@@ -83,7 +84,7 @@ export default function AdminConsole() {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <img
-                          src={app.avatar}
+                          src={app.avatar ?? defaultAvatarImage}
                           className="w-10 h-10 rounded-full"
                           alt=""
                           referrerPolicy="no-referrer"

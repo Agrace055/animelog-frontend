@@ -1,5 +1,6 @@
 import { api } from "./client";
 import type { Media, MediaType } from "../types";
+import { defaultCoverImage } from "../assets/defaultImages";
 
 // ── 后端 → 前端类型映射 ─────────────────────────────────────────────────────
 
@@ -15,7 +16,7 @@ export function mapMedia(m: Record<string, any>): Media {
     type: m.type as MediaType,
     title: m.title ?? "",
     originalTitle: m.originalTitle,
-    coverImage: m.coverUrl || m.coverSourceUrl || "",
+    coverImage: m.coverUrl || m.coverSourceUrl || defaultCoverImage,
     year: m.year ?? 0,
     episodes: m.episodeCount,
     volumes: m.volumeCount,

@@ -17,7 +17,7 @@ export default function AdminLayout() {
   const user = useStore((state) => state.user);
 
   if (!user || user.role !== "admin") {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/login" replace />;
   }
 
   const handleLogout = () => {
@@ -26,12 +26,12 @@ export default function AdminLayout() {
   };
 
   const navItems = [
-    { name: "仪表盘", path: "/console-admin", icon: LayoutDashboard },
-    { name: "媒体管理", path: "/console-admin/media", icon: Film },
-    { name: "短评审核", path: "/console-admin/reviews", icon: MessageSquare },
-    { name: "日历管理", path: "/console-admin/calendar", icon: Calendar },
-    { name: "用户反馈", path: "/console-admin/feedback", icon: MessageCircle },
-    { name: "数据导入", path: "/console-admin/import", icon: Database },
+    { name: "仪表盘", path: "/", icon: LayoutDashboard },
+    { name: "媒体管理", path: "/media", icon: Film },
+    { name: "短评审核", path: "/reviews", icon: MessageSquare },
+    { name: "日历管理", path: "/calendar", icon: Calendar },
+    { name: "用户反馈", path: "/feedback", icon: MessageCircle },
+    { name: "数据导入", path: "/import", icon: Database },
   ];
 
   return (
@@ -85,7 +85,7 @@ export default function AdminLayout() {
               v1.2.0-admin
             </span>
             <Link
-              to="/console-admin/profile"
+              to="/profile"
               className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-slate-800 transition-colors"
               title="个人中心"
             >

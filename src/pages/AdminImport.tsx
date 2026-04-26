@@ -7,6 +7,7 @@ import {
   CheckCircle2,
   Zap,
   Clock,
+  Upload,
 } from "lucide-react";
 import clsx from "clsx";
 import { bangumiApi } from "../api/bangumi";
@@ -21,6 +22,7 @@ export default function AdminImport() {
   // Sync State
   const [syncing, setSyncing] = useState(false);
   const [lastSyncTask, setLastSyncTask] = useState<BangumiTask | null>(null);
+  const [archiveFile, setArchiveFile] = useState<File | null>(null);
 
   // Search State
   const [searchParams, setSearchParams] = useState({
@@ -49,10 +51,15 @@ export default function AdminImport() {
   }, [activeTab]);
 
   const handleManualSync = async () => {
+    if (!archiveFile) {
+      alert("请选择 Bangumi 数据源 ZIP 压缩包");
+      return;
+    }
     setSyncing(true);
     try {
-      const task = await bangumiApi.createArchiveSyncTask();
+      const task = await bangumiApi.uploadArchive(archiveFile);
       setLastSyncTask(task);
+      setArchiveFile(null);
       setActiveTab("history");
       const fresh = await bangumiApi.tasks(50);
       setTasks(fresh);
@@ -104,7 +111,7 @@ export default function AdminImport() {
     setArchiveSyncing(true);
     try {
       await bangumiApi.createArchiveSyncTask();
-      alert("归档同步任务已创建！");
+      alert("解析任务已创建！");
     } catch (e) {
       alert(e instanceof ApiError ? e.message : "同步失败");
     } finally {
@@ -301,7 +308,7 @@ export default function AdminImport() {
               disabled={archiveSyncing}
               className="px-3 py-1.5 text-xs font-bold text-indigo-300 bg-indigo-500/10 hover:bg-indigo-500/20 disabled:opacity-50 rounded transition"
             >
-              {archiveSyncing ? "同步中..." : "归档同步"}
+              {archiveSyncing ? "提交中..." : "解析已有压缩包"}
             </button>
           </div>
           <div className="divide-y divide-slate-700">
@@ -364,32 +371,43 @@ export default function AdminImport() {
         <div className="space-y-6">
           <div className="bg-slate-800 rounded-xl border border-slate-700 p-6 shadow-sm">
             <h3 className="text-white font-bold mb-2 flex items-center gap-2">
-              <Zap className="w-5 h-5 text-amber-400" /> 一键同步最新 Bangumi
-              数据
+              <Upload className="w-5 h-5 text-amber-400" /> 上传 Bangumi
+              数据源
             </h3>
             <p className="text-sm text-slate-400 mb-6">
-              从 Bangumi 官方 Archive
-              下载最新数据包，自动解析并写入源数据表，供后续导入使用。
-              同步完成后可在「任务记录」中查看详情。
+              上传 Bangumi Archive ZIP 压缩包，系统会保存该文件并自动创建解析任务。
+              服务器工作目录中只保留最近上传的一个压缩包。
             </p>
+
+            <label className="block mb-4">
+              <span className="block text-xs font-bold text-slate-400 mb-1.5 uppercase">
+                数据源压缩包
+              </span>
+              <input
+                type="file"
+                accept=".zip,application/zip,application/x-zip-compressed"
+                onChange={(e) => setArchiveFile(e.target.files?.[0] ?? null)}
+                className="block w-full text-sm text-slate-300 file:mr-4 file:rounded-lg file:border-0 file:bg-slate-700 file:px-4 file:py-2 file:text-sm file:font-bold file:text-slate-100 hover:file:bg-slate-600"
+              />
+            </label>
 
             <button
               onClick={handleManualSync}
-              disabled={syncing}
+              disabled={syncing || !archiveFile}
               className="px-6 py-3 bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-white rounded-xl font-bold text-sm transition flex items-center gap-2 shadow-lg shadow-amber-500/20"
             >
               {syncing ? (
                 <RefreshCw className="w-4 h-4 animate-spin" />
               ) : (
-                <Zap className="w-4 h-4" />
+                <Upload className="w-4 h-4" />
               )}
-              {syncing ? "正在提交任务..." : "立即同步"}
+              {syncing ? "正在上传..." : "上传并解析"}
             </button>
 
             {lastSyncTask && (
               <div className="mt-4 p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-lg text-sm text-emerald-400 flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 shrink-0" />
-                归档同步任务已创建（ID: {lastSyncTask.id}
+                数据源解析任务已创建（ID: {lastSyncTask.id}
                 ），正在后台执行，请前往「任务记录」查看进度。
               </div>
             )}
@@ -400,12 +418,11 @@ export default function AdminImport() {
             <ul className="space-y-2 text-xs text-slate-400">
               <li className="flex gap-2">
                 <span className="text-indigo-400 shrink-0">•</span>
-                系统已内置定时任务，按应用配置中的 cron
-                表达式自动执行归档同步，无需 Python 脚本。
+                请先从可访问网络环境下载 Bangumi Archive ZIP，再在这里上传到服务器。
               </li>
               <li className="flex gap-2">
                 <span className="text-indigo-400 shrink-0">•</span>
-                如需立即获取最新数据（如新番季度开始），点击上方按钮手动触发一次归档同步。
+                新上传的压缩包会替换服务器工作目录中的旧压缩包。
               </li>
               <li className="flex gap-2">
                 <span className="text-indigo-400 shrink-0">•</span>

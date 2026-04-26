@@ -2,6 +2,7 @@ import { useParams, useNavigate } from 'react-router';
 import { useStore } from '../store/atoms';
 import MediaCard from '../components/common/MediaCard';
 import { ArrowLeft, User, Mic2, Clapperboard } from 'lucide-react';
+import { defaultAvatarImage } from '../assets/defaultImages';
 
 export default function PersonDetail() {
   const { id } = useParams<{ id: string }>();
@@ -19,8 +20,7 @@ export default function PersonDetail() {
      return isCV || isStaff;
   });
 
-  // Basic mock avatar generation based on name mapping
-  const avatar = `https://picsum.photos/seed/${encodeURIComponent(decodedName)}/200/200`;
+  const avatar = defaultAvatarImage;
   
   // Derive primary role context
   const asCV = animes.some(m => m.characters?.some(c => c.cvName === decodedName));
