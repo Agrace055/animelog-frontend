@@ -16,7 +16,11 @@ RUN npm run build
 # Stage 2: Runtime
 FROM nginx:1.27-alpine
 
-COPY nginx.conf /etc/nginx/nginx.conf
+COPY nginx/http.conf /etc/nginx/config-templates/http.conf
+COPY nginx/https.conf /etc/nginx/config-templates/https.conf
+COPY nginx/40-configure-nginx.sh /docker-entrypoint.d/40-configure-nginx.sh
+RUN chmod +x /docker-entrypoint.d/40-configure-nginx.sh
 COPY --from=builder /app/dist /usr/share/nginx/html
 
 EXPOSE 80
+EXPOSE 443
