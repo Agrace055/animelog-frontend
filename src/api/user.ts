@@ -120,4 +120,12 @@ export const userApi = {
   // NSFW 申请
   applyNsfw: (userId: number, reason: string) =>
     api.post<null>("/nsfw/applications", { userId, reason }),
+
+  // 修改密码
+  changePassword: (
+    userId: string | number,
+    oldPassword: string,
+    newPassword: string,
+  ) =>
+    api.put<null>(`/users/${userId}/password`, { oldPassword, newPassword }),
 };

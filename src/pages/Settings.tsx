@@ -18,8 +18,11 @@ import { ApiError } from "../api/client";
 
 export default function Settings() {
   const user = useStore((state) => state.user);
+  const darkMode = useStore((state) => state.darkMode);
   const setUser = useStore((state) => state.setUser);
+  const toggleDarkMode = useStore((state) => state.toggleDarkMode);
   const updateProfileAsync = useStore((state) => state.updateProfileAsync);
+  const changePasswordAsync = useStore((state) => state.changePasswordAsync);
   const submitFeedbackAsync = useStore((state) => state.submitFeedbackAsync);
   const applyNsfwAsync = useStore((state) => state.applyNsfwAsync);
   const navigate = useNavigate();
@@ -39,6 +42,20 @@ export default function Settings() {
   const [feedbackType, setFeedbackType] = useState<"bug" | "feature">("bug");
   const [feedbackText, setFeedbackText] = useState("");
   const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
+
+  // Nickname State
+  const [editingNickname, setEditingNickname] = useState(false);
+  const [nicknameInput, setNicknameInput] = useState(user?.name ?? "");
+  const [nicknameMsg, setNicknameMsg] = useState("");
+  const [savingNickname, setSavingNickname] = useState(false);
+
+  // Password State
+  const [showPasswordChange, setShowPasswordChange] = useState(false);
+  const [oldPassword, setOldPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordMsg, setPasswordMsg] = useState("");
+  const [savingPassword, setSavingPassword] = useState(false);
 
   if (!user) {
     navigate("/login");
@@ -138,6 +155,48 @@ export default function Settings() {
     }
   };
 
+  const handleSaveNickname = async () => {
+    if (!nicknameInput.trim()) {
+      setNicknameMsg("昵称不能为空");
+      return;
+    }
+    setSavingNickname(true);
+    setNicknameMsg("");
+    try {
+      await updateProfileAsync({ nickname: nicknameInput.trim() });
+      setEditingNickname(false);
+    } catch (e) {
+      setNicknameMsg(e instanceof ApiError ? e.message : "保存失败");
+    } finally {
+      setSavingNickname(false);
+    }
+  };
+
+  const handleChangePassword = async () => {
+    if (!oldPassword || !newPassword || !confirmPassword) {
+      setPasswordMsg("请填写所有密码字段");
+      return;
+    }
+    if (newPassword.length < 6) {
+      setPasswordMsg("新密码长度不能少于 6 位");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setPasswordMsg("两次输入的新密码不一致");
+      return;
+    }
+    setSavingPassword(true);
+    setPasswordMsg("");
+    try {
+      await changePasswordAsync(oldPassword, newPassword);
+      setShowPasswordChange(false);
+    } catch (e) {
+      setPasswordMsg(e instanceof ApiError ? e.message : "修改失败");
+    } finally {
+      setSavingPassword(false);
+    }
+  };
+
   return (
     <div className="max-w-2xl mx-auto py-8 px-4 animate-in fade-in duration-500 pb-24 md:pb-8">
       <div className="flex items-center gap-3 mb-8">
@@ -168,6 +227,55 @@ export default function Settings() {
                 </p>
               </div>
             </div>
+          </div>
+
+          {/* Nickname Edit */}
+          <div className="p-4 border-b border-slate-100">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-slate-700 font-medium">昵称</span>
+              {!editingNickname ? (
+                <button
+                  onClick={() => {
+                    setNicknameInput(user.name);
+                    setNicknameMsg("");
+                    setEditingNickname(true);
+                  }}
+                  className="text-xs text-indigo-500 font-medium hover:underline"
+                >
+                  编辑
+                </button>
+              ) : null}
+            </div>
+            {editingNickname && (
+              <div className="mt-3 space-y-2">
+                <input
+                  type="text"
+                  value={nicknameInput}
+                  onChange={(e) => setNicknameInput(e.target.value)}
+                  className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-indigo-500 transition-colors bg-slate-50"
+                />
+                {nicknameMsg && (
+                  <p className={`text-xs ${nicknameMsg.includes("失败") ? "text-red-500" : "text-emerald-500"}`}>
+                    {nicknameMsg}
+                  </p>
+                )}
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleSaveNickname}
+                    disabled={savingNickname}
+                    className="text-xs bg-indigo-500 hover:bg-indigo-600 disabled:opacity-60 text-white px-3 py-1.5 rounded-lg font-medium transition"
+                  >
+                    {savingNickname ? "保存中..." : "保存"}
+                  </button>
+                  <button
+                    onClick={() => setEditingNickname(false)}
+                    className="text-xs border border-slate-200 px-3 py-1.5 rounded-lg text-slate-500 hover:bg-slate-50 font-medium transition"
+                  >
+                    取消
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="p-4 flex items-center justify-between border-b border-slate-100">
@@ -228,6 +336,74 @@ export default function Settings() {
             )}
           </div>
 
+          {/* Password Change */}
+          <div className="p-4 border-b border-slate-100">
+            {!showPasswordChange ? (
+              <button
+                onClick={() => {
+                  setOldPassword("");
+                  setNewPassword("");
+                  setConfirmPassword("");
+                  setPasswordMsg("");
+                  setShowPasswordChange(true);
+                }}
+                className="text-indigo-500 font-medium text-sm hover:underline"
+              >
+                修改密码
+              </button>
+            ) : (
+              <div className="space-y-3">
+                <div>
+                  <input
+                    type="password"
+                    value={oldPassword}
+                    onChange={(e) => setOldPassword(e.target.value)}
+                    placeholder="当前密码"
+                    className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-indigo-500 transition-colors bg-slate-50"
+                  />
+                </div>
+                <div>
+                  <input
+                    type="password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="新密码（至少 6 位）"
+                    className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-indigo-500 transition-colors bg-slate-50"
+                  />
+                </div>
+                <div>
+                  <input
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="确认新密码"
+                    className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-indigo-500 transition-colors bg-slate-50"
+                  />
+                </div>
+                {passwordMsg && (
+                  <p className={`text-xs ${passwordMsg.includes("失败") || passwordMsg.includes("不一致") || passwordMsg.includes("不能") ? "text-red-500" : "text-emerald-500"}`}>
+                    {passwordMsg}
+                  </p>
+                )}
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleChangePassword}
+                    disabled={savingPassword}
+                    className="text-xs bg-indigo-500 hover:bg-indigo-600 disabled:opacity-60 text-white px-3 py-1.5 rounded-lg font-medium transition"
+                  >
+                    {savingPassword ? "修改中..." : "确认修改"}
+                  </button>
+                  <button
+                    onClick={() => setShowPasswordChange(false)}
+                    className="text-xs border border-slate-200 px-3 py-1.5 rounded-lg text-slate-500 hover:bg-slate-50 font-medium transition"
+                  >
+                    取消
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
           <div
             className="p-4 flex items-center justify-between hover:bg-rose-50 cursor-pointer transition-colors"
             onClick={handleLogout}
@@ -246,13 +422,24 @@ export default function Settings() {
               偏好设置
             </h2>
           </div>
-          <div className="p-4 flex items-center justify-between hover:bg-slate-50 cursor-pointer transition-colors border-b border-slate-100">
+          <div
+            className="p-4 flex items-center justify-between hover:bg-slate-50 cursor-pointer transition-colors border-b border-slate-100"
+            onClick={toggleDarkMode}
+          >
             <div className="flex items-center gap-3 text-slate-700 font-medium">
               <Moon className="w-5 h-5" />
               深色模式
             </div>
-            <div className="w-11 h-6 bg-slate-200 rounded-full relative">
-              <div className="w-5 h-5 bg-white rounded-full absolute left-0.5 top-0.5 shadow-sm"></div>
+            <div
+              className={`w-11 h-6 rounded-full relative transition-colors ${
+                darkMode ? "bg-indigo-500" : "bg-slate-200"
+              }`}
+            >
+              <div
+                className={`w-5 h-5 bg-white rounded-full absolute top-0.5 shadow-sm transition-transform ${
+                  darkMode ? "translate-x-5" : "left-0.5"
+                }`}
+              ></div>
             </div>
           </div>
         </section>

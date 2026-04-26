@@ -20,16 +20,22 @@ import AdminReviews from "./pages/AdminReviews";
 import AdminCalendar from "./pages/AdminCalendar";
 import AdminImport from "./pages/AdminImport";
 import AdminFeedback from "./pages/AdminFeedback";
+import AdminProfile from "./pages/AdminProfile";
 import { useStore } from "./store/atoms";
 
 function AppBootstrap() {
   const user = useStore((state) => state.user);
   const world = useStore((state) => state.world);
+  const darkMode = useStore((state) => state.darkMode);
   const loadMedia = useStore((state) => state.loadMedia);
   const loadRecords = useStore((state) => state.loadRecords);
   const loadFavorites = useStore((state) => state.loadFavorites);
   const loadNotifications = useStore((state) => state.loadNotifications);
   const loadCalendar = useStore((state) => state.loadCalendar);
+
+  useEffect(() => {
+    document.documentElement.classList.toggle("dark", darkMode);
+  }, [darkMode]);
 
   useEffect(() => {
     void Promise.all([
@@ -110,6 +116,7 @@ export default function App() {
             <Route path="/console-admin/calendar" element={<AdminCalendar />} />
             <Route path="/console-admin/feedback" element={<AdminFeedback />} />
             <Route path="/console-admin/import" element={<AdminImport />} />
+            <Route path="/console-admin/profile" element={<AdminProfile />} />
           </Route>
         </Route>
       </Routes>

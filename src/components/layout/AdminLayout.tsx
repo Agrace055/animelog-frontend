@@ -85,7 +85,7 @@ export default function AdminLayout() {
               v1.2.0-admin
             </span>
             <Link
-              to="/my"
+              to="/console-admin/profile"
               className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-slate-800 transition-colors"
               title="个人中心"
             >

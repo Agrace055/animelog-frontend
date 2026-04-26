@@ -98,6 +98,7 @@ interface AppState {
   records: MediaRecord[];
   favoriteIds: string[];
   world: "normal" | "hidden";
+  darkMode: boolean;
   animes: Media[];
   novels: Media[];
   games: Media[];
@@ -119,6 +120,7 @@ interface AppState {
   removeRecord: (id: string) => void;
   toggleFavorite: (mediaId: string) => void;
   setWorld: (world: "normal" | "hidden") => void;
+  toggleDarkMode: () => void;
   updateMedia: (type: MediaType, id: string, data: Partial<Media>) => void;
   updateReviewStatus: (id: string, status: "approved" | "rejected") => void;
   updateCalendarItem: (id: string, data: Partial<CalendarItem>) => void;
@@ -144,6 +146,8 @@ interface AppState {
   // ── 异步 API actions ──────────────────────────────────────────────────────
   /** 登录并写入 token + user */
   loginAsync: (identifier: string, password: string) => Promise<void>;
+  /** 验证码登录 */
+  loginWithCodeAsync: (identifier: string, code: string) => Promise<void>;
   /** 注册新账号 */
   registerAsync: (params: {
     username: string;
@@ -194,6 +198,8 @@ interface AppState {
     phone?: string;
     avatarUrl?: string;
   }) => Promise<void>;
+  /** 修改密码（已登录状态） */
+  changePasswordAsync: (oldPassword: string, newPassword: string) => Promise<void>;
   /** 通过 API 提交反馈 */
   submitFeedbackAsync: (type: string, content: string) => Promise<void>;
   /** 通过 API 申请 NSFW */
@@ -210,6 +216,7 @@ export const useStore = create<AppState>((set, get) => ({
   records: [],
   favoriteIds: [],
   world: "normal",
+  darkMode: localStorage.getItem("darkMode") === "true",
   animes: [],
   novels: [],
   games: [],
@@ -266,6 +273,12 @@ export const useStore = create<AppState>((set, get) => ({
         : [...state.favoriteIds, mediaId],
     })),
   setWorld: (world) => set({ world }),
+  toggleDarkMode: () =>
+    set((state) => {
+      const next = !state.darkMode;
+      localStorage.setItem("darkMode", String(next));
+      return { darkMode: next };
+    }),
   updateMedia: (type, id, data) =>
     set((state) => {
       if (type === "anime")
@@ -361,6 +374,23 @@ export const useStore = create<AppState>((set, get) => ({
     set((s) => ({ loading: { ...s.loading, login: true }, error: null }));
     try {
       const result = await authApi.login(identifier, password);
+      localStorage.setItem("token", result.token);
+      const user = mapBackendUser(result.user as any);
+      saveUser(user);
+      set({ user });
+    } catch (e) {
+      const msg = e instanceof ApiError ? e.message : "登录失败，请重试";
+      set((s) => ({ error: msg, loading: { ...s.loading, login: false } }));
+      throw e;
+    } finally {
+      set((s) => ({ loading: { ...s.loading, login: false } }));
+    }
+  },
+
+  loginWithCodeAsync: async (identifier, code) => {
+    set((s) => ({ loading: { ...s.loading, login: true }, error: null }));
+    try {
+      const result = await authApi.loginWithCode(identifier, code);
       localStorage.setItem("token", result.token);
       const user = mapBackendUser(result.user as any);
       saveUser(user);
@@ -625,6 +655,12 @@ export const useStore = create<AppState>((set, get) => ({
     const next = mapBackendUser(updated as any);
     saveUser(next);
     set({ user: next });
+  },
+
+  changePasswordAsync: async (oldPassword, newPassword) => {
+    const { user } = get();
+    if (!user) return;
+    await userApi.changePassword(user.id, oldPassword, newPassword);
   },
 
   submitFeedbackAsync: async (type, content) => {

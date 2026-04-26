@@ -35,4 +35,10 @@ export const authApi = {
 
   sendSmsCode: (target: string, purpose: string) =>
     api.post<null>("/auth/code/sms", { target, purpose }),
+
+  loginWithCode: (identifier: string, code: string) =>
+    api.post<LoginResult>("/auth/login/code", { identifier, code }),
+
+  resetPassword: (identifier: string, code: string, newPassword: string) =>
+    api.post<null>("/auth/password/reset", { identifier, code, newPassword }),
 };
