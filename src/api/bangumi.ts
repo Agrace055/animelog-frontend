@@ -38,6 +38,22 @@ export interface SourcesPageResult {
   size: number;
 }
 
+interface BackendPageResult<T> {
+  records: T[];
+  total: number;
+  pageNum: number;
+  pageSize: number;
+}
+
+function mapPage<T>(raw: BackendPageResult<T>): SourcesPageResult {
+  return {
+    list: raw.records as BangumiSource[],
+    total: raw.total,
+    page: raw.pageNum,
+    size: raw.pageSize,
+  };
+}
+
 export const bangumiApi = {
   // 创建存档同步任务
   createArchiveSyncTask: () =>
@@ -59,5 +75,10 @@ export const bangumiApi = {
     nsfw?: boolean;
     page?: number;
     size?: number;
-  }) => api.get<SourcesPageResult>("/admin/bangumi/sources", params as any),
+  }) =>
+    api
+      .get<
+        BackendPageResult<BangumiSource>
+      >("/admin/bangumi/sources", params as any)
+      .then(mapPage),
 };

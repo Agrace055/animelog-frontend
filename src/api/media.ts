@@ -34,7 +34,7 @@ export interface MediaListParams {
   type?: MediaType;
   year?: number;
   status?: string;
-  includeNsfw?: boolean;
+  nsfw?: boolean;
   sort?: string;
   page?: number;
   size?: number;
@@ -47,26 +47,47 @@ export interface PageResult<T> {
   size: number;
 }
 
+interface BackendPageResult<T> {
+  records: T[];
+  total: number;
+  pageNum: number;
+  pageSize: number;
+}
+
+function mapPage<T, U>(
+  raw: BackendPageResult<T>,
+  mapper: (item: T) => U,
+): PageResult<U> {
+  return {
+    list: raw.records.map(mapper),
+    total: raw.total,
+    page: raw.pageNum,
+    size: raw.pageSize,
+  };
+}
+
 export const mediaApi = {
   list: async (params: MediaListParams): Promise<PageResult<Media>> => {
-    const raw = await api.get<PageResult<Record<string, any>>>(
+    const raw = await api.get<BackendPageResult<Record<string, any>>>(
       "/media",
       params as any,
     );
-    return { ...raw, list: raw.list.map(mapMedia) };
+    return mapPage(raw, mapMedia);
   },
 
   search: async (params: {
     keyword?: string;
     type?: MediaType;
+    year?: number;
+    nsfw?: boolean;
     page?: number;
     size?: number;
   }): Promise<PageResult<Media>> => {
-    const raw = await api.get<PageResult<Record<string, any>>>(
+    const raw = await api.get<BackendPageResult<Record<string, any>>>(
       "/media/search",
       params as any,
     );
-    return { ...raw, list: raw.list.map(mapMedia) };
+    return mapPage(raw, mapMedia);
   },
 
   detail: async (id: string): Promise<Media> => {
