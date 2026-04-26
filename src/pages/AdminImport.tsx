@@ -2,14 +2,11 @@ import { useState, useEffect } from "react";
 import {
   Database,
   Search,
-  Settings,
   RefreshCw,
   AlertCircle,
   CheckCircle2,
-  Play,
-  Pause,
-  Save,
-  Filter,
+  Zap,
+  Clock,
 } from "lucide-react";
 import clsx from "clsx";
 import { bangumiApi } from "../api/bangumi";
@@ -17,13 +14,13 @@ import type { BangumiSource, BangumiTask } from "../api/bangumi";
 import { ApiError } from "../api/client";
 
 export default function AdminImport() {
-  const [activeTab, setActiveTab] = useState<"manual" | "settings" | "history">(
+  const [activeTab, setActiveTab] = useState<"manual" | "sync" | "history">(
     "manual",
   );
 
-  // Settings State
-  const [autoImport, setAutoImport] = useState(true);
-  const [cronExp, setCronExp] = useState("0 0 1 * *");
+  // Sync State
+  const [syncing, setSyncing] = useState(false);
+  const [lastSyncTask, setLastSyncTask] = useState<BangumiTask | null>(null);
 
   // Search State
   const [searchParams, setSearchParams] = useState({
@@ -51,8 +48,19 @@ export default function AdminImport() {
     }
   }, [activeTab]);
 
-  const handleSaveSettings = async () => {
-    alert("配置已成功下发至解析服务！");
+  const handleManualSync = async () => {
+    setSyncing(true);
+    try {
+      const task = await bangumiApi.createArchiveSyncTask();
+      setLastSyncTask(task);
+      setActiveTab("history");
+      const fresh = await bangumiApi.tasks(50);
+      setTasks(fresh);
+    } catch (e) {
+      alert(e instanceof ApiError ? e.message : "触发同步失败");
+    } finally {
+      setSyncing(false);
+    }
   };
 
   const handleSearch = async () => {
@@ -146,8 +154,8 @@ export default function AdminImport() {
       <div className="flex gap-2 border-b border-slate-800 mb-6">
         {[
           { id: "manual", name: "增量导入", icon: Search },
-          { id: "history", name: "任务记录", icon: RefreshCw },
-          { id: "settings", name: "自动化配置", icon: Settings },
+          { id: "history", name: "任务记录", icon: Clock },
+          { id: "sync", name: "归档同步", icon: Zap },
         ].map((t) => (
           <button
             key={t.id}
@@ -352,60 +360,58 @@ export default function AdminImport() {
         </div>
       )}
 
-      {activeTab === "settings" && (
-        <div className="bg-slate-800 rounded-xl border border-slate-700 p-6 shadow-sm">
-          <h3 className="text-white font-bold mb-6 flex items-center gap-2">
-            <Filter className="w-5 h-5 text-indigo-400" /> 自动化抓取脚本配置
-          </h3>
-
-          <div className="space-y-6 max-w-lg">
-            <div className="flex items-center justify-between p-4 bg-slate-900 rounded-xl border border-slate-700">
-              <div>
-                <div className="font-bold text-slate-200 text-sm">
-                  开启每月自动增量拉取
-                </div>
-                <div className="text-xs text-slate-500 mt-1">
-                  Python 后台服务将定时同步 Bangumi 源数据
-                </div>
-              </div>
-              <button
-                onClick={() => setAutoImport(!autoImport)}
-                className={clsx(
-                  "relative inline-flex h-6 w-11 items-center rounded-full transition-colors",
-                  autoImport ? "bg-emerald-500" : "bg-slate-600",
-                )}
-              >
-                <span
-                  className={clsx(
-                    "inline-block h-4 w-4 transform rounded-full bg-white transition-transform",
-                    autoImport ? "translate-x-6" : "translate-x-1",
-                  )}
-                />
-              </button>
-            </div>
-
-            <div>
-              <label className="block text-sm font-bold text-slate-300 mb-2">
-                Cron 表达式
-              </label>
-              <input
-                type="text"
-                value={cronExp}
-                onChange={(e) => setCronExp(e.target.value)}
-                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 text-white focus:border-indigo-500 outline-none font-mono text-sm"
-                placeholder="0 0 1 * *"
-              />
-              <p className="text-xs text-slate-500 mt-2">
-                默认每月 1 号执行。将通过 HTTP JSON-RPC 下发到解析模块进行重载。
-              </p>
-            </div>
+      {activeTab === "sync" && (
+        <div className="space-y-6">
+          <div className="bg-slate-800 rounded-xl border border-slate-700 p-6 shadow-sm">
+            <h3 className="text-white font-bold mb-2 flex items-center gap-2">
+              <Zap className="w-5 h-5 text-amber-400" /> 一键同步最新 Bangumi
+              数据
+            </h3>
+            <p className="text-sm text-slate-400 mb-6">
+              从 Bangumi 官方 Archive
+              下载最新数据包，自动解析并写入源数据表，供后续导入使用。
+              同步完成后可在「任务记录」中查看详情。
+            </p>
 
             <button
-              onClick={handleSaveSettings}
-              className="w-full sm:w-auto px-6 py-2.5 bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg font-bold text-sm transition flex justify-center items-center gap-2 shadow-lg shadow-indigo-500/20"
+              onClick={handleManualSync}
+              disabled={syncing}
+              className="px-6 py-3 bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-white rounded-xl font-bold text-sm transition flex items-center gap-2 shadow-lg shadow-amber-500/20"
             >
-              <Save className="w-4 h-4" /> 保存并应用配置
+              {syncing ? (
+                <RefreshCw className="w-4 h-4 animate-spin" />
+              ) : (
+                <Zap className="w-4 h-4" />
+              )}
+              {syncing ? "正在提交任务..." : "立即同步"}
             </button>
+
+            {lastSyncTask && (
+              <div className="mt-4 p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-lg text-sm text-emerald-400 flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 shrink-0" />
+                归档同步任务已创建（ID: {lastSyncTask.id}
+                ），正在后台执行，请前往「任务记录」查看进度。
+              </div>
+            )}
+          </div>
+
+          <div className="bg-slate-800 rounded-xl border border-slate-700 p-5 shadow-sm">
+            <h4 className="text-slate-300 font-bold text-sm mb-3">使用说明</h4>
+            <ul className="space-y-2 text-xs text-slate-400">
+              <li className="flex gap-2">
+                <span className="text-indigo-400 shrink-0">•</span>
+                系统已内置定时任务，按应用配置中的 cron
+                表达式自动执行归档同步，无需 Python 脚本。
+              </li>
+              <li className="flex gap-2">
+                <span className="text-indigo-400 shrink-0">•</span>
+                如需立即获取最新数据（如新番季度开始），点击上方按钮手动触发一次归档同步。
+              </li>
+              <li className="flex gap-2">
+                <span className="text-indigo-400 shrink-0">•</span>
+                归档同步完成后，前往「增量导入」选择具体条目导入到媒体库。
+              </li>
+            </ul>
           </div>
         </div>
       )}

@@ -19,6 +19,7 @@ import AdminMedia from "./pages/AdminMedia";
 import AdminReviews from "./pages/AdminReviews";
 import AdminCalendar from "./pages/AdminCalendar";
 import AdminImport from "./pages/AdminImport";
+import AdminFeedback from "./pages/AdminFeedback";
 import { useStore } from "./store/atoms";
 
 function AppBootstrap() {
@@ -107,6 +108,7 @@ export default function App() {
             <Route path="/console-admin/media" element={<AdminMedia />} />
             <Route path="/console-admin/reviews" element={<AdminReviews />} />
             <Route path="/console-admin/calendar" element={<AdminCalendar />} />
+            <Route path="/console-admin/feedback" element={<AdminFeedback />} />
             <Route path="/console-admin/import" element={<AdminImport />} />
           </Route>
         </Route>

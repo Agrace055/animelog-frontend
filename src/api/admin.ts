@@ -22,6 +22,16 @@ export interface BackendMedia {
   [key: string]: unknown;
 }
 
+export interface BackendFeedback {
+  id: number;
+  userId: number;
+  type: string;
+  content: string;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export const adminApi = {
   // 媒体管理
   updateMedia: (id: string | number, data: Record<string, unknown>) =>
@@ -59,5 +69,13 @@ export const adminApi = {
   ) =>
     api.post<null>(
       `/admin/nsfw/applications/${id}/${action}?reviewerId=${reviewerId}`,
+    ),
+
+  // 用户反馈
+  feedbacks: () => api.get<BackendFeedback[]>("/admin/feedback"),
+
+  updateFeedbackStatus: (id: number, status: string) =>
+    api.patch<null>(
+      `/admin/feedback/${id}/status?status=${encodeURIComponent(status)}`,
     ),
 };
