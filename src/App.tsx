@@ -75,22 +75,23 @@ export default function App() {
     <BrowserRouter>
       <AppBootstrap />
       <Routes>
-        {/* User Routes */}
-        <Route element={<Layout />}>
-          <Route path="/" element={<Home />} />
-          <Route path="/anime" element={<MediaList type="anime" />} />
-          <Route path="/novel" element={<MediaList type="novel" />} />
-          <Route path="/game" element={<MediaList type="game" />} />
-          <Route path="/anime/:id" element={<MediaDetail type="anime" />} />
-          <Route path="/novel/:id" element={<MediaDetail type="novel" />} />
-          <Route path="/game/:id" element={<MediaDetail type="game" />} />
-          <Route path="/person/:id" element={<PersonDetail />} />
-          <Route path="/search" element={<Search />} />
-          <Route path="/calendar" element={<Calendar />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
+        {/* Public Routes */}
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
 
-          <Route element={<ProtectedRoute />}>
+        {/* Protected User Routes */}
+        <Route element={<ProtectedRoute />}>
+          <Route element={<Layout />}>
+            <Route path="/" element={<Home />} />
+            <Route path="/anime" element={<MediaList type="anime" />} />
+            <Route path="/novel" element={<MediaList type="novel" />} />
+            <Route path="/game" element={<MediaList type="game" />} />
+            <Route path="/anime/:id" element={<MediaDetail type="anime" />} />
+            <Route path="/novel/:id" element={<MediaDetail type="novel" />} />
+            <Route path="/game/:id" element={<MediaDetail type="game" />} />
+            <Route path="/person/:id" element={<PersonDetail />} />
+            <Route path="/search" element={<Search />} />
+            <Route path="/calendar" element={<Calendar />} />
             <Route path="/my" element={<Dashboard />} />
             <Route path="/my/records" element={<MyRecords />} />
             <Route path="/my/progress" element={<MyRecords />} />
