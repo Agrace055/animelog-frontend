@@ -177,6 +177,8 @@ interface AppState {
   /** 通过 API 点赞/踩 */
   likeReviewAsync: (reviewId: string) => Promise<void>;
   dislikeReviewAsync: (reviewId: string) => Promise<void>;
+  /** 通过 API 举报评价 */
+  reportReviewAsync: (reviewId: string, reason: string) => Promise<void>;
   /** 从 API 加载通知 */
   loadNotifications: () => Promise<void>;
   /** 通过 API 标记单条已读 */
@@ -545,6 +547,13 @@ export const useStore = create<AppState>((set, get) => ({
         ),
       }));
     }
+  },
+
+  reportReviewAsync: async (reviewId, reason) => {
+    const { user, reportReview } = get();
+    if (!user) return;
+    await userApi.reportReview(reviewId, Number(user.id), reason);
+    reportReview(reviewId, reason);
   },
 
   loadNotifications: async () => {

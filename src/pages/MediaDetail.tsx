@@ -26,12 +26,12 @@ export default function MediaDetail({ type }: { type: MediaType }) {
   const allReviews = useStore((state) => state.reviews);
   const records = useStore((state) => state.records);
   const favoriteIds = useStore((state) => state.favoriteIds);
-  const reportReview = useStore((state) => state.reportReview);
   const user = useStore((state) => state.user);
   const loadReviews = useStore((state) => state.loadReviews);
   const createReviewAsync = useStore((state) => state.createReviewAsync);
   const likeReviewAsync = useStore((state) => state.likeReviewAsync);
   const dislikeReviewAsync = useStore((state) => state.dislikeReviewAsync);
+  const reportReviewAsync = useStore((state) => state.reportReviewAsync);
   const toggleFavoriteAsync = useStore((state) => state.toggleFavoriteAsync);
   const saveRecordAsync = useStore((state) => state.saveRecordAsync);
 
@@ -105,11 +105,15 @@ export default function MediaDetail({ type }: { type: MediaType }) {
     setReviewRating(0);
   };
 
-  const handleReport = (reviewId: string) => {
+  const handleReport = async (reviewId: string) => {
     const reason = window.prompt("请输入举报理由：");
     if (reason) {
-      reportReview(reviewId, reason);
-      alert("举报已提交，感谢您的反馈！");
+      try {
+        await reportReviewAsync(reviewId, reason);
+        alert("举报已提交，感谢您的反馈！");
+      } catch {
+        alert("举报提交失败，请稍后重试。");
+      }
     }
   };
 
