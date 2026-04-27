@@ -1,4 +1,5 @@
 import { api } from "./client";
+import { uploadFileInChunks } from "./chunkUpload";
 
 export interface BangumiSource {
   id: number;
@@ -59,11 +60,16 @@ export const bangumiApi = {
   createArchiveSyncTask: () =>
     api.post<BangumiTask>("/admin/bangumi/tasks/archive-sync"),
 
-  // 上传存档压缩包并创建解析任务
-  uploadArchive: (file: File) => {
-    const formData = new FormData();
-    formData.append("file", file);
-    return api.postForm<BangumiTask>("/admin/bangumi/archive/upload", formData);
+  // 分片上传存档压缩包并创建解析任务
+  uploadArchive: async (file: File, onProgress?: (progress: number) => void) => {
+    if (file.size === 0) {
+      throw new Error("Bangumi 数据源压缩包不能为空");
+    }
+    return uploadFileInChunks<BangumiTask>({
+      endpoint: "/admin/bangumi/archive/upload/chunk",
+      file,
+      onProgress,
+    });
   },
 
   // 创建业务导入任务

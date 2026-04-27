@@ -55,7 +55,10 @@ async function requestForm<T>(path: string, formData: FormData): Promise<T> {
     headers,
     body: formData,
   });
-  const json = await res.json();
+  const text = await res.text();
+  const json = text
+    ? tryParseJson(text, res.status, res.statusText)
+    : { code: res.status, msg: res.statusText };
 
   if (res.status === 401 || json.code === 401) {
     clearSessionAndRedirect();
@@ -66,6 +69,14 @@ async function requestForm<T>(path: string, formData: FormData): Promise<T> {
     throw new ApiError(json.code ?? res.status, json.msg ?? "请求失败");
   }
   return json.data as T;
+}
+
+function tryParseJson(text: string, status: number, statusText: string) {
+  try {
+    return JSON.parse(text);
+  } catch {
+    return { code: status, msg: statusText || "请求失败" };
+  }
 }
 
 type Params = Record<string, string | number | boolean | undefined | null>;

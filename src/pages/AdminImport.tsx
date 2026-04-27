@@ -23,6 +23,7 @@ export default function AdminImport() {
   const [syncing, setSyncing] = useState(false);
   const [lastSyncTask, setLastSyncTask] = useState<BangumiTask | null>(null);
   const [archiveFile, setArchiveFile] = useState<File | null>(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   // Search State
   const [searchParams, setSearchParams] = useState({
@@ -56,15 +57,17 @@ export default function AdminImport() {
       return;
     }
     setSyncing(true);
+    setUploadProgress(0);
     try {
-      const task = await bangumiApi.uploadArchive(archiveFile);
+      const task = await bangumiApi.uploadArchive(archiveFile, setUploadProgress);
       setLastSyncTask(task);
       setArchiveFile(null);
+      setUploadProgress(0);
       setActiveTab("history");
       const fresh = await bangumiApi.tasks(50);
       setTasks(fresh);
     } catch (e) {
-      alert(e instanceof ApiError ? e.message : "触发同步失败");
+      alert(e instanceof ApiError || e instanceof Error ? e.message : "触发同步失败");
     } finally {
       setSyncing(false);
     }
@@ -401,7 +404,7 @@ export default function AdminImport() {
               ) : (
                 <Upload className="w-4 h-4" />
               )}
-              {syncing ? "正在上传..." : "上传并解析"}
+              {syncing ? `正在上传 ${uploadProgress}%` : "上传并解析"}
             </button>
 
             {lastSyncTask && (
