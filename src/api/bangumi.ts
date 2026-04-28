@@ -37,6 +37,9 @@ export interface SourcesPageResult {
   total: number;
   page: number;
   size: number;
+  pages: number;
+  hasNext: boolean;
+  hasPrev: boolean;
 }
 
 interface BackendPageResult<T> {
@@ -44,6 +47,8 @@ interface BackendPageResult<T> {
   total: number;
   pageNum: number;
   pageSize: number;
+  pages: number;
+  hasNext: boolean;
 }
 
 function mapPage<T>(raw: BackendPageResult<T>): SourcesPageResult {
@@ -52,6 +57,9 @@ function mapPage<T>(raw: BackendPageResult<T>): SourcesPageResult {
     total: raw.total,
     page: raw.pageNum,
     size: raw.pageSize,
+    pages: raw.pages,
+    hasNext: raw.hasNext,
+    hasPrev: raw.pageNum > 1,
   };
 }
 
@@ -61,7 +69,10 @@ export const bangumiApi = {
     api.post<BangumiTask>("/admin/bangumi/tasks/archive-sync"),
 
   // 分片上传存档压缩包并创建解析任务
-  uploadArchive: async (file: File, onProgress?: (progress: number) => void) => {
+  uploadArchive: async (
+    file: File,
+    onProgress?: (progress: number) => void,
+  ) => {
     if (file.size === 0) {
       throw new Error("Bangumi 数据源压缩包不能为空");
     }

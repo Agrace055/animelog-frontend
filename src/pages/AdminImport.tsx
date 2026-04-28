@@ -11,8 +11,14 @@ import {
 } from "lucide-react";
 import clsx from "clsx";
 import { bangumiApi } from "../api/bangumi";
-import type { BangumiSource, BangumiTask } from "../api/bangumi";
+import type {
+  BangumiSource,
+  BangumiTask,
+  SourcesPageResult,
+} from "../api/bangumi";
 import { ApiError } from "../api/client";
+
+const SEARCH_PAGE_SIZE = 20;
 
 export default function AdminImport() {
   const [activeTab, setActiveTab] = useState<"manual" | "sync" | "history">(
@@ -32,8 +38,12 @@ export default function AdminImport() {
     nsfw: false,
   });
   const [isSearching, setIsSearching] = useState(false);
-  const [searchResults, setSearchResults] = useState<BangumiSource[]>([]);
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [searchResultPage, setSearchResultPage] =
+    useState<SourcesPageResult | null>(null);
+  const [selectedBangumiIds, setSelectedBangumiIds] = useState<Set<number>>(
+    new Set(),
+  );
+  const [hasSearched, setHasSearched] = useState(false);
 
   // History State
   const [tasks, setTasks] = useState<BangumiTask[]>([]);
@@ -59,7 +69,10 @@ export default function AdminImport() {
     setSyncing(true);
     setUploadProgress(0);
     try {
-      const task = await bangumiApi.uploadArchive(archiveFile, setUploadProgress);
+      const task = await bangumiApi.uploadArchive(
+        archiveFile,
+        setUploadProgress,
+      );
       setLastSyncTask(task);
       setArchiveFile(null);
       setUploadProgress(0);
@@ -67,21 +80,31 @@ export default function AdminImport() {
       const fresh = await bangumiApi.tasks(50);
       setTasks(fresh);
     } catch (e) {
-      alert(e instanceof ApiError || e instanceof Error ? e.message : "触发同步失败");
+      alert(
+        e instanceof ApiError || e instanceof Error
+          ? e.message
+          : "触发同步失败",
+      );
     } finally {
       setSyncing(false);
     }
   };
 
-  const handleSearch = async () => {
+  const searchResults = searchResultPage?.list ?? [];
+
+  const handleSearch = async (page = 1) => {
     setIsSearching(true);
     try {
       const result = await bangumiApi.sources({
         mediaType: searchParams.type,
         year: searchParams.year,
         nsfw: searchParams.nsfw,
+        page,
+        size: SEARCH_PAGE_SIZE,
       });
-      setSearchResults(result.list);
+      setHasSearched(true);
+      setSearchResultPage(result);
+      setSelectedBangumiIds(new Set());
     } catch (e) {
       alert(e instanceof ApiError ? e.message : "搜索失败");
     } finally {
@@ -89,18 +112,18 @@ export default function AdminImport() {
     }
   };
 
-  const toggleSelection = (id: string) => {
-    const next = new Set(selectedIds);
-    if (next.has(id)) next.delete(id);
-    else next.add(id);
-    setSelectedIds(next);
+  const toggleSelection = (bangumiId: number) => {
+    const next = new Set(selectedBangumiIds);
+    if (next.has(bangumiId)) next.delete(bangumiId);
+    else next.add(bangumiId);
+    setSelectedBangumiIds(next);
   };
 
   const handleImportSelected = async () => {
-    if (selectedIds.size === 0) return;
+    if (selectedBangumiIds.size === 0) return;
     try {
-      await bangumiApi.createImportTask(Array.from(selectedIds).map(Number));
-      setSelectedIds(new Set());
+      await bangumiApi.createImportTask(Array.from(selectedBangumiIds));
+      setSelectedBangumiIds(new Set());
       setActiveTab("history");
       // Reload tasks
       const fresh = await bangumiApi.tasks(50);
@@ -152,6 +175,20 @@ export default function AdminImport() {
         bangumiApi.tasks(50).then(setTasks);
       })
       .catch(() => {});
+  };
+
+  const renderSourceTitle = (item: BangumiSource) => {
+    if (item.nameCn && item.nameCn.trim()) {
+      return item.nameCn;
+    }
+    return item.name;
+  };
+
+  const renderSourceSubtitle = (item: BangumiSource) => {
+    if (item.nameCn && item.nameCn.trim() && item.nameCn !== item.name) {
+      return item.name;
+    }
+    return null;
   };
 
   return (
@@ -238,7 +275,7 @@ export default function AdminImport() {
             </div>
 
             <button
-              onClick={handleSearch}
+              onClick={() => handleSearch(1)}
               disabled={isSearching}
               className="px-5 py-2 bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg font-bold text-sm ml-auto disabled:opacity-50 transition flex items-center gap-2"
             >
@@ -252,21 +289,51 @@ export default function AdminImport() {
           </div>
 
           {/* Search Results */}
-          {searchResults.length > 0 && (
+          {searchResultPage && (
             <div className="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden shadow-sm">
               <div className="p-4 border-b border-slate-700 flex justify-between items-center bg-slate-800/50">
-                <h3 className="text-white font-bold text-sm">
-                  检索结果 ({searchResults.length})
-                </h3>
-                <button
-                  onClick={handleImportSelected}
-                  disabled={selectedIds.size === 0}
-                  className="px-4 py-1.5 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 disabled:hover:bg-emerald-500 text-white rounded font-bold text-xs transition"
-                >
-                  导入选中项 ({selectedIds.size})
-                </button>
+                <div>
+                  <h3 className="text-white font-bold text-sm">
+                    检索结果 ({searchResultPage.total})
+                  </h3>
+                  <p className="text-xs text-slate-400 mt-1">
+                    第 {searchResultPage.page} /{" "}
+                    {Math.max(searchResultPage.pages, 1)} 页，当前显示{" "}
+                    {searchResults.length} 条
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleSearch(searchResultPage.page - 1)}
+                    disabled={isSearching || !searchResultPage.hasPrev}
+                    className="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 disabled:opacity-50 disabled:hover:bg-slate-700 text-slate-200 rounded font-bold text-xs transition"
+                  >
+                    上一页
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleSearch(searchResultPage.page + 1)}
+                    disabled={isSearching || !searchResultPage.hasNext}
+                    className="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 disabled:opacity-50 disabled:hover:bg-slate-700 text-slate-200 rounded font-bold text-xs transition"
+                  >
+                    下一页
+                  </button>
+                  <button
+                    onClick={handleImportSelected}
+                    disabled={selectedBangumiIds.size === 0}
+                    className="px-4 py-1.5 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 disabled:hover:bg-emerald-500 text-white rounded font-bold text-xs transition"
+                  >
+                    导入选中项 ({selectedBangumiIds.size})
+                  </button>
+                </div>
               </div>
               <div className="divide-y divide-slate-700">
+                {searchResults.length === 0 && (
+                  <div className="p-8 text-center text-slate-500 text-sm">
+                    当前筛选条件下没有可导入的 Bangumi 条目
+                  </div>
+                )}
                 {searchResults.map((item) => (
                   <div
                     key={item.id}
@@ -275,28 +342,48 @@ export default function AdminImport() {
                     <div className="pr-4">
                       <input
                         type="checkbox"
-                        checked={selectedIds.has(item.id)}
-                        onChange={() => toggleSelection(item.id)}
+                        checked={selectedBangumiIds.has(item.bangumiId)}
+                        onChange={() => toggleSelection(item.bangumiId)}
                         className="w-4 h-4 rounded border-slate-500 text-indigo-500 focus:ring-indigo-500 focus:ring-offset-slate-800 bg-slate-900 cursor-pointer"
                       />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="font-bold text-white text-sm">
-                        {item.title}
+                      <div className="font-bold text-white text-sm truncate">
+                        {renderSourceTitle(item)}
                       </div>
-                      <div className="text-xs text-slate-400 mt-1 flex gap-2">
+                      {renderSourceSubtitle(item) && (
+                        <div className="text-xs text-slate-400 mt-1 truncate">
+                          {renderSourceSubtitle(item)}
+                        </div>
+                      )}
+                      <div className="text-xs text-slate-400 mt-2 flex flex-wrap gap-2">
                         <span className="bg-slate-900 px-1.5 py-0.5 rounded">
-                          {item.id}
+                          源记录 #{item.id}
                         </span>
                         <span className="bg-slate-900 px-1.5 py-0.5 rounded uppercase">
-                          {item.type}
+                          Bangumi #{item.bangumiId}
                         </span>
-                        <span>{item.year} 年</span>
+                        <span className="bg-slate-900 px-1.5 py-0.5 rounded uppercase">
+                          {item.mediaType}
+                        </span>
+                        {item.year ? <span>{item.year} 年</span> : null}
+                        {item.score != null ? (
+                          <span>评分 {item.score.toFixed(1)}</span>
+                        ) : null}
+                        {item.episodeCount ? (
+                          <span>{item.episodeCount} 话</span>
+                        ) : null}
                       </div>
                     </div>
                   </div>
                 ))}
               </div>
+            </div>
+          )}
+
+          {hasSearched && !searchResultPage && !isSearching && (
+            <div className="bg-slate-800 rounded-xl border border-slate-700 p-8 text-center text-slate-500 text-sm shadow-sm">
+              当前没有可展示的检索结果
             </div>
           )}
         </div>
@@ -374,11 +461,11 @@ export default function AdminImport() {
         <div className="space-y-6">
           <div className="bg-slate-800 rounded-xl border border-slate-700 p-6 shadow-sm">
             <h3 className="text-white font-bold mb-2 flex items-center gap-2">
-              <Upload className="w-5 h-5 text-amber-400" /> 上传 Bangumi
-              数据源
+              <Upload className="w-5 h-5 text-amber-400" /> 上传 Bangumi 数据源
             </h3>
             <p className="text-sm text-slate-400 mb-6">
-              上传 Bangumi Archive ZIP 压缩包，系统会保存该文件并自动创建解析任务。
+              上传 Bangumi Archive ZIP
+              压缩包，系统会保存该文件并自动创建解析任务。
               服务器工作目录中只保留最近上传的一个压缩包。
             </p>
 
@@ -421,7 +508,8 @@ export default function AdminImport() {
             <ul className="space-y-2 text-xs text-slate-400">
               <li className="flex gap-2">
                 <span className="text-indigo-400 shrink-0">•</span>
-                请先从可访问网络环境下载 Bangumi Archive ZIP，再在这里上传到服务器。
+                请先从可访问网络环境下载 Bangumi Archive
+                ZIP，再在这里上传到服务器。
               </li>
               <li className="flex gap-2">
                 <span className="text-indigo-400 shrink-0">•</span>
